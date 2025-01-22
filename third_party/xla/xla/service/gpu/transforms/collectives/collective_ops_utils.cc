@@ -168,12 +168,12 @@ GPUTopologyType GetTopologyType(
   se::CudaComputeCapability cc = device_description.cuda_compute_capability();
   // TODO: b/390095346 - Use topology information once available at compile
   // time.
-  if (cc.IsHopper()) {
+  if (cc.IsHopperGeneration()) {
     return config.num_partitions() * config.replica_count() > 8
                ? GPUTopologyType::MULTI_HOST
                : GPUTopologyType::SINGLE_HOST;
   }
-  if (cc.IsAmpere()) {
+  if (cc.IsAmpereGeneration()) {
     return config.num_partitions() * config.replica_count() > 16
                ? GPUTopologyType::MULTI_HOST
                : GPUTopologyType::SINGLE_HOST;

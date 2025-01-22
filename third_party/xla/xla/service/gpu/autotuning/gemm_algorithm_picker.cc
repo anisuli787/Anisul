@@ -454,7 +454,7 @@ absl::StatusOr<bool> RunOnInstruction(HloInstruction* gemm,
                        // We only set the 'algorithm' field on
                        // non-Ampere architectures, as for Ampere
                        // it's ignored in any case.
-                       return !cc.IsAtLeast(se::CudaComputeCapability::kAmpere);
+                       return !cc.IsAtLeastAmpere();
                      },
                      [](const se::RocmComputeCapability&) {
                        return true;  // TODO: not decided yet

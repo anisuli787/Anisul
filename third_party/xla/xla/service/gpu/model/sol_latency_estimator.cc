@@ -344,7 +344,7 @@ SolLatencyEstimator::Create(
   if (IsPassEnabledAtOptimizationEffort<LatencyHidingScheduler>(module)) {
     // If the user enabled opt effort we turn the estimator on if we're
     // compiling for Hopper.
-    return gpu_device_info.cuda_compute_capability().IsHopper();
+    return gpu_device_info.cuda_compute_capability().IsHopperGeneration();
   }
   // If this flag is on by default then we provide users an escape hatch in case
   // they find the new cost model less profitable than T-shirt sizes.
@@ -355,7 +355,7 @@ SolLatencyEstimator::Create(
   }
   // Otherwise we are more conservative and we turn it on only for Hopper and if
   // `module` contains only supported collectives.
-  return gpu_device_info.cuda_compute_capability().IsHopper() &&
+  return gpu_device_info.cuda_compute_capability().IsHopperGeneration() &&
          HasOnlySupportedCollectives(module);
 }
 

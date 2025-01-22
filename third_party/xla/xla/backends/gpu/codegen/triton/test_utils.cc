@@ -84,8 +84,8 @@ std::vector<xla::PrimitiveType> AllXlaDataTypes() {
 
 bool SupportsBF16(const stream_executor::GpuComputeCapability& cc) {
   if (std::holds_alternative<stream_executor::CudaComputeCapability>(cc)) {
-    return std::get<stream_executor::CudaComputeCapability>(cc).IsAtLeast(
-        se::CudaComputeCapability::kAmpere);
+    return std::get<stream_executor::CudaComputeCapability>(cc)
+        .IsAtLeastAmpere();
   } else if (std::holds_alternative<stream_executor::RocmComputeCapability>(
                  cc)) {
     return std::get<stream_executor::RocmComputeCapability>(cc)

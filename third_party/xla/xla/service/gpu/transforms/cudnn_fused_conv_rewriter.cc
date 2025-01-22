@@ -114,7 +114,8 @@ bool ShouldUseCudnnRuntimeFusion(const DebugOptions& debug_opts,
                                  se::GpuComputeCapability cc) {
   const auto* cuda_cc = std::get_if<se::CudaComputeCapability>(&cc);
   if (cuda_cc != nullptr)
-    return debug_opts.xla_gpu_use_runtime_fusion() && cuda_cc->IsAtLeast(7, 5);
+    return debug_opts.xla_gpu_use_runtime_fusion() &&
+           cuda_cc->SupportsAllFeaturesOf(se::CudaComputeCapability(7, 5));
   else
     return true;
 }

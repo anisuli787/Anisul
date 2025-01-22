@@ -17,13 +17,13 @@ limitations under the License.
 #include <string>
 #include <utility>
 
-#include "absl/strings/str_replace.h"
+#include <gtest/gtest.h>
 #include "xla/error_spec.h"
 #include "xla/hlo/parser/hlo_parser.h"
 #include "xla/service/gpu/tests/gpu_codegen_test.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
-#include "tsl/platform/statusor.h"
-#include "tsl/platform/test.h"
+#include "xla/tsl/platform/statusor.h"
 
 namespace xla {
 namespace gpu {
@@ -51,8 +51,7 @@ class ReductionVectorizationNoOptTest : public GpuCodegenTest {
 };
 
 TEST_F(ReductionVectorizationNoOptTest, MultiOutputStore) {
-  if (!GetCudaComputeCapability().IsAtLeast(
-          se::CudaComputeCapability::kPascal)) {
+  if (!GetCudaComputeCapability().IsAtLeastPascal()) {
     GTEST_SKIP() << "Maxwell GPUs are less vectorized";
   }
   const char* hlo_text = R"(

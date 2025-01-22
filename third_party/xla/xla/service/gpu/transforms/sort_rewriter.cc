@@ -403,17 +403,17 @@ bool ShouldRewriteCompatibleSort(se::DeviceDescription device_description,
       int bitwidth = primitive_util::BitWidth(operand_shape.element_type());
       int batch_size = Product(operand_shape.dimensions()) / num_elements;
 
-      if (cuda_cc->IsBlackwell()) {
+      if (cuda_cc->IsBlackwellGeneration()) {
         // TODO(b/410480351): Verify that the H100 heuristic also works well for
         // Blackwell or implement a custom heuristic.
         return IsCubSortFasterOnH100(bitwidth, batch_size, num_elements,
                                      device_description.core_count());
       }
-      if (cuda_cc->IsHopper()) {
+      if (cuda_cc->IsHopperGeneration()) {
         return IsCubSortFasterOnH100(bitwidth, batch_size, num_elements,
                                      device_description.core_count());
       }
-      if (cuda_cc->IsAmpere()) {
+      if (cuda_cc->IsAmpereGeneration()) {
         return IsCubSortFasterOnA100(bitwidth, batch_size, num_elements,
                                      device_description.core_count());
       }

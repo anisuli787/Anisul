@@ -767,7 +767,7 @@ absl::Status CUDABlas::DoBlasGemmStridedBatchedWithAlgorithm(
   // Workaround CUDA bug where batched GEMM is erroneously marked as
   // unsupported by manually unbatching it on Pascal.
   if (cuda_in_type == CUDA_R_16BF &&
-      !stream->GetCudaComputeCapability().IsAtLeast(7)) {
+      !stream->GetCudaComputeCapability().IsAtLeastVolta()) {
     for (int batch = 0; batch < batch_count; ++batch) {
       const auto *a_matrix = reinterpret_cast<const __nv_bfloat16 *>(
           static_cast<const Eigen::bfloat16 *>(a.opaque()) + batch * stride_a);
@@ -829,8 +829,7 @@ bool CUDABlas::GetBlasGemmAlgorithms(
   // Note that when CUDA version and compute capability is not sufficient, we
   // still return the out_algorithms. Caller needs to make sure that in this
   // case, the returned vector is empty.
-  if (stream->GetCudaComputeCapability().IsAtLeast(
-          CudaComputeCapability::kAmpere)) {
+  if (stream->GetCudaComputeCapability().IsAtLeastAmpere()) {
     // Note: for NVIDIA Ampere Architecture GPUs and beyond, i.e. SM version >=
     // 80, the numbered algorithm options are equivalent to CUBLAS_GEMM_DEFAULT.
     // CUBLAS_GEMM_DEFAULT_TENSOR_OP has been depreacted in CUDA 11.
@@ -949,7 +948,8 @@ absl::Status CUDABlas::DoBlasGemmBatchedInternal(
 
   cudaDataType_t data_type = CUDADataType<T>::type;
 
-  if (stream->GetCudaComputeCapability().IsAtLeast(5)) {
+  if (stream->GetCudaComputeCapability().SupportsAllFeaturesOf(
+          stream_executor::CudaComputeCapability(5, 0))) {
     cublasMath_t math_type;
     cublasGemmAlgo_t algo;
 
@@ -1156,7 +1156,7 @@ absl::Status CUDABlas::DoBlasGemmStridedBatched(
 #if CUDA_VERSION >= 11000
     case dnn::kBF16: {
       CudaComputeCapability cc = stream->GetCudaComputeCapability();
-      if (cc.IsAtLeast(7)) {
+      if (cc.IsAtLeastVolta()) {
         cublasGemmAlgo_t algo =
             (cc.major >= 7 ? CUBLAS_GEMM_DFALT_TENSOR_OP : CUBLAS_GEMM_DFALT);
         return DoBlasInternalImpl(

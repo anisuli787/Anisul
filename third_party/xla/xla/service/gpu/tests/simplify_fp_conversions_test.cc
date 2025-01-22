@@ -13,7 +13,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ==============================================================================*/
 
+#include <variant>
+
+#include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/tests/hlo_test_base.h"
 #include "xla/xla.pb.h"
 

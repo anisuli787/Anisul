@@ -140,7 +140,14 @@ bool IsTmaEnabledForDevice(
     const stream_executor::DeviceDescription& device_info) {
   bool is_cuda = std::holds_alternative<stream_executor::CudaComputeCapability>(
       device_info.gpu_compute_capability());
-  return is_cuda && device_info.cuda_compute_capability().IsAtLeastHopper();
+  // TMA is a feature extension in the accelerated feature set of H100 and B200
+  // families. Therefore we need to explicitly check for those GPU families
+  // here.
+  return is_cuda &&
+         (device_info.cuda_compute_capability().SupportsAllFeaturesOf(
+              stream_executor::CudaComputeCapability::H100Family()) ||
+          device_info.cuda_compute_capability().SupportsAllFeaturesOf(
+              stream_executor::CudaComputeCapability::B200Family()));
 }
 
 }  // namespace xla::gpu

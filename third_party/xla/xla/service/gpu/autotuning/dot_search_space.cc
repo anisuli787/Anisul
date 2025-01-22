@@ -36,6 +36,7 @@ limitations under the License.
 #include "xla/service/gpu/matmul_utils.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
 #include "xla/tsl/lib/core/bits.h"
 #include "xla/util.h"

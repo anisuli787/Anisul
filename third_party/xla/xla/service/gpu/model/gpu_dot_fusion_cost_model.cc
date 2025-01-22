@@ -129,14 +129,14 @@ double GetEffectiveFlopsPerNsForTileSize(
   // Final flops derate factor.
   double flops_derate = 1.0;
 
-  if (cuda_compute_capability.IsBlackwell()) {
+  if (cuda_compute_capability.IsBlackwellGeneration()) {
     if (tile_m < 128) {
       // TODO(maniananth): Update this derate once we have more data from
       // actual measurements on Blackwell. For now, we are applying a 50%
       // derate to account for smaller M shapes.
       flops_derate = 0.5;
     }
-  } else if (cuda_compute_capability.IsHopper()) {
+  } else if (cuda_compute_capability.IsHopperGeneration()) {
     if (tile_m < 64) {
       // Having a tile size M < 64 will lead to not being able to use the H100
       // tensor core instructions (wgmma). Defaulting to wmma instructions from
@@ -145,7 +145,7 @@ double GetEffectiveFlopsPerNsForTileSize(
       // (https://hazyresearch.stanford.edu/blog/2024-05-12-tk)
       flops_derate = 0.63;
     }
-  } else if (cuda_compute_capability.IsAmpere()) {
+  } else if (cuda_compute_capability.IsAmpereGeneration()) {
     if (tile_m < 16) {
       // A100 tensor core instructions are effective at tile_m >= 16. We're
       // applying a 50% derate to account for this.

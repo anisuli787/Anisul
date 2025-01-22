@@ -708,8 +708,7 @@ absl::Status RunOptimizationPasses(
   HloPredicate upcaster_filter = [&](const HloInstruction* instr) {
     const auto* cuda_cc = std::get_if<se::CudaComputeCapability>(
         &gpu_target_config.device_description.gpu_compute_capability());
-    if (cuda_cc != nullptr &&
-        !cuda_cc->IsAtLeast(se::CudaComputeCapability::kVolta)) {
+    if (cuda_cc != nullptr && !cuda_cc->IsAtLeastVolta()) {
       return true;
     }
     return !gpu::IsCublasSupportedMatMul(
@@ -1655,8 +1654,7 @@ absl::Status GpuCompiler::OptimizeHloPostLayoutAssignment(
     // TODO(b/375566188): Figure out whether we can get rid of this pass.
     pipeline.AddPass<DotNormalizer>();
     if (debug_options.xla_gpu_enable_triton_gemm() &&
-        ((cuda_cc != nullptr &&
-          cuda_cc->IsAtLeast(se::CudaComputeCapability::kAmpere)) ||
+        ((cuda_cc != nullptr && cuda_cc->IsAtLeastAmpere()) ||
          rocm_cc != nullptr)) {
       pipeline.AddPass<GemvRewriter>();
       // Transpose dimension grouper simplifies the dimensions of the transpose
@@ -1702,8 +1700,7 @@ absl::Status GpuCompiler::OptimizeHloPostLayoutAssignment(
     // in the softmax codegen pipeline. However we should run before
     // ReductionDimensionGrouper, as that makes matching the softmax pattern
     // harder.
-    if ((cuda_cc != nullptr &&
-         cuda_cc->IsAtLeast(se::CudaComputeCapability::kAmpere)) ||
+    if ((cuda_cc != nullptr && cuda_cc->IsAtLeastAmpere()) ||
         rocm_cc != nullptr) {
       pipeline.AddPass<HloPassFix<GpuAlgebraicSimplifier>>(simplifier_options,
                                                            gpu_version);
@@ -1864,7 +1861,7 @@ absl::Status GpuCompiler::OptimizeHloPostLayoutAssignment(
           "Failed to parse GpuTargetConfigProto");
     }
 
-    return Compiler::TargetConfig{gpu_target_config_proto};
+    return Compiler::TargetConfig::FromProto(gpu_target_config_proto);
   }
   if (executor) {
     Compiler::TargetConfig target_config = Compiler::TargetConfig{executor};

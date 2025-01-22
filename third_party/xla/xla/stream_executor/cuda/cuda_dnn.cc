@@ -927,7 +927,7 @@ class CudnnConvolutionDescriptor {
 
 static bool TensorOpMathAvailable(
     CudaComputeCapability cuda_compute_capability) {
-  return cuda_compute_capability.IsAtLeast(7);
+  return cuda_compute_capability.IsAtLeastVolta();
 }
 
 static bool IsTensorMathEnabled(CudaComputeCapability cuda_compute_capability,
@@ -5635,7 +5635,8 @@ absl::Status CudnnSupport::GetFusedConvolveRunners(
   // ones.
 
   if (input_type == dnn::DataType::kInt8 &&
-      !stream->GetCudaComputeCapability().IsAtLeast(6, 1)) {
+      !stream->GetCudaComputeCapability().IsAtLeast(
+          CudaComputeCapability(6, 1))) {
     return tsl::errors::Unimplemented(
         "cudnnConvolutionBiasActivationForward() for int8 is only supported "
         "on GPUs with compute capability 6.1 or later.");

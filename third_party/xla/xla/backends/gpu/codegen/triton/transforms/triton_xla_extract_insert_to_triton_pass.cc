@@ -801,7 +801,12 @@ class DeviceDescriptionParser
       return option.error("failed to parse GpuDeviceInfoProto from string: " +
                           arg_value);
     }
-    value = stream_executor::DeviceDescription(proto);
+    absl::StatusOr<stream_executor::DeviceDescription> device_description =
+        stream_executor::DeviceDescription::FromGpuProto(proto);
+    if (!device_description.ok()) {
+      return option.error(device_description.status().message());
+    }
+    value = *device_description;
     return false;
   }
 

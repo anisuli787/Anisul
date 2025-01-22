@@ -66,8 +66,8 @@ limitations under the License.
 #include "mlir/IR/Attributes.h"
 #include "mlir/IR/Builders.h"
 #include "mlir/IR/BuiltinAttributes.h"
+#include "mlir/IR/Diagnostics.h"
 #include "mlir/IR/DialectRegistry.h"
-#include "mlir/IR/ImplicitLocOpBuilder.h"
 #include "mlir/IR/Location.h"
 #include "mlir/IR/MLIRContext.h"
 #include "mlir/IR/OwningOpRef.h"
@@ -505,8 +505,9 @@ void AddLoweringPasses(mlir::OpPassManager& pm,
 
     // FP8 conversion intrinsics are available on sm89 since ptx 8.1
     // Older ptx versions only support FP8 conversion for sm90
-    if ((ptx_version >= se::SemanticVersion(8, 1, 0) && cc->IsAtLeast(8, 9)) ||
-        (ptx_version >= se::SemanticVersion(7, 8, 0) && cc->IsAtLeast(9, 0))) {
+    if ((ptx_version >= se::SemanticVersion(8, 1, 0) && cc->IsAtLeastAda()) ||
+        (ptx_version >= se::SemanticVersion(7, 8, 0) &&
+         cc->IsAtLeastHopper())) {
       pm.addPass(CreateConvertFloatNvidiaPass());
     }
   } else if (auto* cc = std::get_if<se::RocmComputeCapability>(
