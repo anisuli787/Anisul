@@ -622,6 +622,8 @@ cc_library(
         "@local_xla//xla/hlo/translate/mhlo_to_hlo:layout_util",
         "@local_xla//xla/service:computation_placer_hdr",
         "@local_xla//xla/service:hlo_proto_cc",
+        "@local_xla//xla/service/spmd/shardy:constants",
+        "@local_xla//xla/service/spmd/shardy/stablehlo_round_trip:stablehlo_import",
         "@local_xla//xla/stream_executor:device_memory_allocator",
     ] + if_libtpu([
         ":xla_tpu_backend_registration",
@@ -945,8 +947,12 @@ cc_library(
         "@com_google_absl//absl/status",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
+        "@local_xla//xla:shape_util",
         "@local_xla//xla:status_macros",
         "@local_xla//xla/hlo/builder:sharding_builder",
+        "@local_xla//xla/hlo/builder:xla_builder",
+        "@local_xla//xla/hlo/ir:hlo_sharding",
+        "@local_xla//xla/service/spmd/shardy/stablehlo_round_trip:stablehlo_import",
     ],
 )
 
@@ -1125,6 +1131,7 @@ tf_cc_test(
         "@local_xla//xla/hlo/builder:xla_builder",
         "@local_xla//xla/hlo/ir:hlo",
         "@local_xla//xla/hlo/ir:hlo_sharding",
+        "@local_xla//xla/hlo/testlib:filecheck",
         "@local_xla//xla/service",
         "@local_xla//xla/service:cpu_plugin",
         "@local_xla//xla/service:hlo_module_util",
