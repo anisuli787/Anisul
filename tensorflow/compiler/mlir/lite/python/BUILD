@@ -164,6 +164,14 @@ py_strict_library(
         "//tensorflow/compiler/mlir/quantization/tensorflow/python:py_function_lib_py",
         "//tensorflow/python:pywrap_tensorflow",
     ],
+    # ] + if_pywrap(
+    #     if_false = [
+    #         ":_pywrap_converter_api",
+    #     ],
+    #     if_true = [
+    #         "//tensorflow/lite/python:pywrap_tflite",
+    #     ],
+    # ),
 )
 
 config_setting(
@@ -241,6 +249,7 @@ tf_python_pybind_extension(
         "_pywrap_converter_api.pyi",
     ],
     visibility = [
+        "//tensorflow/lite/python:__pkg__",
         "//tensorflow/python:__pkg__",
     ],
     deps = [
