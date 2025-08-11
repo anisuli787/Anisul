@@ -3314,6 +3314,7 @@ cc_library(
         "@com_google_absl//absl/strings:string_view",
         "@com_google_absl//absl/types:span",
         "@local_tsl//tsl/platform",
+        "@local_tsl//tsl/profiler/lib:traceme",
     ],
 )
 
