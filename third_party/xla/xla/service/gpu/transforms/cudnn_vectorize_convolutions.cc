@@ -47,13 +47,12 @@ limitations under the License.
 #include "xla/service/hlo_module_config.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
-#include "xla/stream_executor/device_description.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/dnn.h"
+#include "xla/tsl/platform/errors.h"
+#include "xla/tsl/platform/statusor.h"
 #include "xla/util.h"
 #include "xla/xla_data.pb.h"
-#include "tsl/platform/errors.h"
-#include "tsl/platform/logging.h"
-#include "tsl/platform/statusor.h"
 
 namespace xla {
 namespace gpu {
@@ -608,7 +607,8 @@ absl::StatusOr<bool> CudnnVectorizeConvolutions::Run(
       // Try to (re)vectorize to int8x32 if this is an sm75+ GPU.  If we can't,
       // fall back to int8x4.
       bool local_changed = false;
-      if (compute_capability_.IsAtLeast(7, 5)) {
+      if (compute_capability_.SupportsAllFeaturesOf(
+              se::CudaComputeCapability(7, 5))) {
         TF_ASSIGN_OR_RETURN(
             local_changed,
             TryRevectorizeConv(compute_capability_, cudnn_version_, conv, 32));

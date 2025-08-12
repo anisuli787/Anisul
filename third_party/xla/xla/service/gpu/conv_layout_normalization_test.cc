@@ -15,11 +15,10 @@ limitations under the License.
 
 #include <variant>
 
-#include "xla/error_spec.h"
-#include "xla/hlo/ir/hlo_module.h"
+#include <gtest/gtest.h>
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
 #include "xla/tests/hlo_test_base.h"
-#include "tsl/platform/test.h"
 
 namespace xla {
 namespace gpu {
@@ -119,7 +118,7 @@ ENTRY TestComputation {
 
 TEST_F(ConvolutionLayoutNormalizationTest, GraphConvF8) {
   if (!GetCudaComputeCapability().IsAtLeast(
-          se::CudaComputeCapability::kHopper)) {
+          se::CudaComputeCapability::Hopper())) {
     GTEST_SKIP() << "FP8 convolutions require Hopper or newer architecture.";
   }
   const char* hlo = R"(

@@ -78,7 +78,7 @@ TEST_F(FloatSupportTestWithTriton, MixedTypeDotWithBF16IsNotUpcasted) {
   bool skip_test =
       std::visit(absl::Overload(
                      [](const se::CudaComputeCapability& cc) {
-                       return !cc.IsAtLeast(se::CudaComputeCapability::kAmpere);
+                       return !cc.IsAtLeastAmpere();
                      },
                      [](const se::RocmComputeCapability&) { return true; }),
                  GetGpuComputeCapability());

@@ -20,6 +20,7 @@ limitations under the License.
 #include <functional>
 #include <initializer_list>
 #include <memory>
+#include <string>
 #include <tuple>
 #include <utility>
 #include <variant>
@@ -46,24 +47,23 @@ limitations under the License.
 #include "xla/service/gpu/matmul_utils.h"
 #include "xla/service/gpu/reduction_utils.h"
 #include "xla/service/gpu/stream_executor_util.h"
+#include "xla/service/layout_assignment.h"
 #include "xla/service/logical_buffer.h"
 #include "xla/service/matmul_indexing_utils.h"
 #include "xla/service/memory_annotations.h"
 #include "xla/shape.h"
 #include "xla/shape_layout.h"
 #include "xla/shape_util.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
 #include "xla/stream_executor/dnn.h"
 #include "xla/tsl/platform/errors.h"
+#include "xla/tsl/platform/status.h"
 #include "xla/tsl/platform/statusor.h"
 #include "xla/tsl/util/env_var.h"
 #include "xla/util.h"
-#include "xla/window_util.h"
 #include "xla/xla.pb.h"
 #include "xla/xla_data.pb.h"
-#include "tsl/platform/errors.h"
-#include "tsl/platform/status.h"
-#include "tsl/platform/statusor.h"
 
 namespace xla {
 namespace gpu {
@@ -141,7 +141,7 @@ HeuristicLayoutAssignment(const HloInstruction* instr,
   // https://docs.nvidia.com/deeplearning/performance/dl-performance-convolutional/index.html#tensor-layout.
   if (auto* cc = std::get_if<se::CudaComputeCapability>(&gpu_version)) {
     // TODO(b/383560056): investigate chips below Hopper as well.
-    if (cc->IsAtLeast(se::CudaComputeCapability::kHopper)) {
+    if (cc->IsAtLeastHopper()) {
       // With that said, cuDNN's documentation states that NHWC is not supported
       // for float64, so we use NCHW instead.
       if (input_ty == F64) {
@@ -174,8 +174,7 @@ HeuristicLayoutAssignment(const HloInstruction* instr,
     const auto* cuda_compute_capability =
         std::get_if<se::CudaComputeCapability>(&gpu_version);
     bool is_volta =
-        cuda_compute_capability &&
-        cuda_compute_capability->IsAtLeast(se::CudaComputeCapability::kVolta);
+        cuda_compute_capability && cuda_compute_capability->IsAtLeastVolta();
     if (!isFloat16 || !is_volta ||
         instr->shape().tuple_shapes(0).dimensions().size() != 4) {
       return kAllNCHW;
@@ -451,7 +450,7 @@ absl::Status GpuLayoutAssignment::AddDotBackendConstraints(
   const se::CudaComputeCapability* cc =
       std::get_if<se::CudaComputeCapability>(&gpu_version_);
   const bool both_operands_require_minor_contraction_dims =
-      is_s8_to_s32 || (is_fp8 && !(cc && cc->IsBlackwell()));
+      is_s8_to_s32 || (is_fp8 && !(cc && cc->IsBlackwellGeneration()));
 
   for (const Side& side : {lhs, rhs}) {
     if ((IsPackedInstruction(side.operand) && pack_along_contracting_dims) ||

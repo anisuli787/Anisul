@@ -20,6 +20,7 @@ limitations under the License.
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/status/status_matchers.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "xla/hlo/ir/hlo_computation.h"
@@ -44,8 +45,6 @@ limitations under the License.
 #include "xla/tests/hlo_test_base.h"
 #include "xla/tsl/platform/statusor.h"
 #include "xla/xla_data.pb.h"
-#include "tsl/platform/status_matchers.h"
-#include "tsl/platform/statusor.h"
 
 namespace xla {
 namespace gpu {
@@ -53,7 +52,6 @@ namespace {
 
 namespace m = ::xla::match;
 using ::testing::NotNull;
-using ::tsl::testing::IsOkAndHolds;
 
 class LayoutAssignmentTest : public HloTestBase {
  public:
@@ -653,8 +651,7 @@ ENTRY entry {
 }
 
 TEST_F(LayoutAssignmentTest, ConvCuDNNF8) {
-  if (!GetCudaComputeCapability().IsAtLeast(
-          se::CudaComputeCapability::kHopper)) {
+  if (!GetCudaComputeCapability().IsAtLeastHopper()) {
     GTEST_SKIP() << "FP8 convolutions require HOPPER or newer archiecture.";
   }
 
@@ -678,8 +675,7 @@ TEST_F(LayoutAssignmentTest, ConvCuDNNF8) {
 }
 
 TEST_F(LayoutAssignmentTest, ConvCuDNNBF16) {
-  if (!GetCudaComputeCapability().IsAtLeast(
-          se::CudaComputeCapability::kAmpere)) {
+  if (!GetCudaComputeCapability().IsAtLeastAmpere()) {
     GTEST_SKIP() << "Conv with Bfloat16 uses NHWC layout for "
                     "architectures with Tensor Cores.";
   }
@@ -704,8 +700,7 @@ TEST_F(LayoutAssignmentTest, ConvCuDNNBF16) {
 }
 
 TEST_F(LayoutAssignmentTest, ConvCuDNNFP16) {
-  if (!GetCudaComputeCapability().IsAtLeast(
-          se::CudaComputeCapability::kVolta)) {
+  if (!GetCudaComputeCapability().IsAtLeastVolta()) {
     GTEST_SKIP() << "Conv with FP16 uses NHWC layout for "
                     "architectures with Tensor Cores.";
   }

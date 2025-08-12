@@ -32,13 +32,12 @@ limitations under the License.
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "third_party/gpus/cuda/include/nvJitLink.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/cuda/nvjitlink.h"
 #include "xla/stream_executor/cuda/ptx_compiler_helpers.h"
-#include "xla/stream_executor/device_description.h"
 #include "xla/stream_executor/gpu/gpu_asm_opts.h"
-#include "tsl/platform/errors.h"
-#include "tsl/platform/logging.h"
-#include "tsl/platform/statusor.h"
+#include "xla/tsl/platform/errors.h"
+#include "xla/tsl/platform/statusor.h"
 
 namespace stream_executor {
 
@@ -136,11 +135,7 @@ absl::StatusOr<std::vector<uint8_t>> CompileAndLinkUsingLibNvJitLink(
   WarnIfBadPtxasVersion("nvJitLink", cc, {version_major, version_minor, 0});
 
   std::vector<std::string> cli_args;
-  // On Hopper, default to sm_90a so that all instructions can be used. But
-  // only sm_90 is forward compatible, so don't use sm_90a with newer hardware:
-  // https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#ptx-compatibility
-  absl::string_view extension = ShouldUsePtxExtension(cc) ? "a" : "";
-  std::string architecture = absl::StrCat("sm_", cc.major, cc.minor, extension);
+  const std::string architecture = cc.GetPtxAsTargetName();
   cli_args.emplace_back(absl::StrCat("-arch=", architecture));
 
   if (VLOG_IS_ON(2)) {

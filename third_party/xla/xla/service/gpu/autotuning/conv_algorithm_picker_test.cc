@@ -32,6 +32,7 @@ limitations under the License.
 #include "xla/service/gpu/transforms/cudnn_fused_conv_rewriter.h"
 #include "xla/service/pattern_matcher.h"
 #include "xla/service/platform_util.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
 #include "xla/stream_executor/dnn.h"
 #include "xla/stream_executor/platform.h"
@@ -144,7 +145,7 @@ ENTRY main {
 
 TEST_F(GpuConvAlgorithmPickerTest, SetAlgorithmGraphConvF8) {
   if (!GetCudaComputeCapability().IsAtLeast(
-          se::CudaComputeCapability::kHopper)) {
+          se::CudaComputeCapability::Hopper())) {
     GTEST_SKIP() << "FP8 convolutions require Hopper or newer architecture.";
   }
   constexpr absl::string_view kHlo = R"(

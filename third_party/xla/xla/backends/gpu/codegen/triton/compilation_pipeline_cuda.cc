@@ -87,7 +87,7 @@ absl::Status CreateTritonPipeline(
       mt::gpu::createTritonGPUOptimizeDotOperands({cc.IsAtLeastAmpere()}));
   pm->addPass(ttng::createTritonNvidiaGPUOptimizeDescriptorEncodingPass());
   pm->addPass(mt::createTritonLoopAwareCSE());
-  if (cc.IsAmpere() || cc.IsHopper()) {
+  if (cc.IsAmpereGeneration() || cc.IsHopperGeneration()) {
     pm->addPass(mt::gpu::createTritonGPUFuseNestedLoops());
     pm->addPass(mlir::createCanonicalizerPass());
     pm->addPass(mlir::createLoopInvariantCodeMotionPass());

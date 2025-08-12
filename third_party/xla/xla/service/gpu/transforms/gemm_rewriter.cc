@@ -63,16 +63,17 @@ limitations under the License.
 #include "xla/shape_util.h"
 #include "xla/status_macros.h"
 #include "xla/stream_executor/blas.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
 #include "xla/stream_executor/gpu/gpu_blas_lt.h"
 #include "xla/stream_executor/semantic_version.h"
+#include "xla/tsl/platform/errors.h"
+#include "xla/tsl/platform/statusor.h"
 #include "xla/tsl/protobuf/dnn.pb.h"
 #include "xla/types.h"
 #include "xla/util.h"
 #include "xla/xla_data.pb.h"
-#include "tsl/platform/errors.h"
 #include "tsl/platform/ml_dtypes.h"
-#include "tsl/platform/statusor.h"
 
 namespace xla {
 namespace gpu {
@@ -1084,7 +1085,7 @@ class GemmRewriterVisitor : public DfsHloRewriteVisitor {
                           GetCudaComputeCapability(gpu_version_));
       // FP8 GEMM kernels are only available on Ada, Hopper, and later
       // architectures.
-      if (!cuda_compute_capability.IsAtLeast(8, 9)) {
+      if (!cuda_compute_capability.IsAtLeastAda()) {
         VLOG(1) << "FP8 Custom Calls require Ada, Hopper, or later "
                    "architectures. Got: "
                 << cuda_compute_capability.ToString()
@@ -1363,7 +1364,7 @@ class GemmRewriterVisitor : public DfsHloRewriteVisitor {
     // operand, i.e. A, to be row-major. If A is column-major, swap the
     // contracting and non-contracting dimension and transpose the matrix to
     // effectively make it column-major.
-    if (!cuda_compute_capability.IsBlackwell()) {
+    if (!cuda_compute_capability.IsBlackwellGeneration()) {
       if (gemm_config.lhs_layout.order == MatrixLayout::Order::kColumnMajor) {
         CHECK(a_contracting_dims[0] == num_batch_dims ||
               a_contracting_dims[0] == num_batch_dims + 1);

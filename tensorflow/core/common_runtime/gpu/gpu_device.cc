@@ -2373,7 +2373,13 @@ Status BaseGPUDeviceFactory::GetValidDeviceIds(
         "No supported cuda capabilities in binary.");
   }
   se::CudaComputeCapability min_supported_capability = *std::min_element(
-      cuda_supported_capabilities.begin(), cuda_supported_capabilities.end());
+      cuda_supported_capabilities.begin(), cuda_supported_capabilities.end(),
+      [](const stream_executor::CudaComputeCapability& a,
+         const stream_executor::CudaComputeCapability& b) {
+        // IsAtLeast returns true if a >= b, but we need to return true if a <
+        // b. So we negate the result of IsAtLeast.
+        return !a.IsAtLeast(b);
+      });
 #endif
 
   int min_gpu_core_count =
@@ -2396,7 +2402,7 @@ Status BaseGPUDeviceFactory::GetValidDeviceIds(
 #if GOOGLE_CUDA
     // Only GPUs with no less than the minimum supported compute capability is
     // accepted.
-    if (desc->cuda_compute_capability() < min_supported_capability) {
+    if (!desc->cuda_compute_capability().IsAtLeast(min_supported_capability)) {
       LOG(INFO) << "Ignoring visible gpu device " << "("
                 << GetShortDeviceDescription(visible_gpu_id, *desc) << ") "
                 << "with Cuda compute capability "

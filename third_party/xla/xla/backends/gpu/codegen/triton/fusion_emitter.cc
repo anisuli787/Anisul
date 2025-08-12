@@ -2057,7 +2057,7 @@ absl::StatusOr<TritonWrapperResult> CompileTritonToLLVM(
   }
 
   if (std::holds_alternative<se::CudaComputeCapability>(cc) &&
-      std::get<se::CudaComputeCapability>(cc).IsBlackwell()) {
+      std::get<se::CudaComputeCapability>(cc).IsBlackwellGeneration()) {
     // https://docs.nvidia.com/cuda/parallel-thread-execution/#tensor-memory
     constexpr int kTensorMemoryColumns = 512;
     const int tensor_mem_columns =

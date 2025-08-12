@@ -16,12 +16,13 @@ limitations under the License.
 #include <memory>
 #include <variant>
 
+#include <gtest/gtest.h>
 #include "absl/status/statusor.h"
 #include "xla/error_spec.h"
 #include "xla/service/gpu/tests/gpu_codegen_test.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
 #include "xla/stream_executor/device_description.h"
-#include "tsl/platform/statusor.h"
-#include "tsl/platform/test.h"
+#include "xla/tsl/platform/statusor.h"
 
 // TODO(b/210165681): The tests in this file are fragile to HLO op names.
 

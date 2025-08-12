@@ -103,7 +103,8 @@ std::vector<TritonGemmConfig> GemmFusionAutotunerImpl::GetDefaultTritonConfigs()
                Config(64, 32, 32, 1, 4, 2),   Config(64, 32, 64, 64, 3, 2),
                Config(64, 64, 128, 8, 1, 8),  Config(64, 64, 16, 1, 1, 2),
                Config(64, 64, 16, 1, 3, 2)};
-  } else if (compute_capability.IsHopper() || compute_capability.IsAmpere()) {
+  } else if (compute_capability.IsHopperGeneration() ||
+             compute_capability.IsAmpereGeneration()) {
     configs = {Config(16, 16, 64, 1, 4, 2),    Config(16, 16, 128, 1, 4, 4),
                Config(16, 16, 128, 128, 4, 2), Config(16, 16, 128, 16, 1, 2),
                Config(16, 256, 16, 1, 1, 2),   Config(32, 32, 128, 16, 1, 4),

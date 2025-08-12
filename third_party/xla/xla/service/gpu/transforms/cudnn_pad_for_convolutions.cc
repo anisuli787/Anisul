@@ -41,12 +41,11 @@ limitations under the License.
 #include "xla/service/gpu/stream_executor_util.h"
 #include "xla/shape.h"
 #include "xla/shape_util.h"
-#include "xla/stream_executor/device_description.h"
+#include "xla/stream_executor/cuda/cuda_compute_capability.h"
+#include "xla/tsl/platform/errors.h"
+#include "xla/tsl/platform/statusor.h"
 #include "xla/util.h"
 #include "xla/xla_data.pb.h"
-#include "tsl/platform/errors.h"
-#include "tsl/platform/logging.h"
-#include "tsl/platform/statusor.h"
 
 namespace xla {
 namespace gpu {
@@ -500,7 +499,8 @@ absl::StatusOr<bool> CudnnPadForConvolutions::Run(
       // On Turing and later (sm75+), pad to multiples of 32 bytes if possible,
       // because that lets us use the fast int8x32 data type.
       bool local_changed = false;
-      if (compute_capability_.IsAtLeast(7, 5)) {
+      if (compute_capability_.SupportsAllFeaturesOf(
+              se::CudaComputeCapability(7, 5))) {
         TF_ASSIGN_OR_RETURN(
             local_changed,
             ResolveAndPad(conv, absl::bind_front(
@@ -516,7 +516,8 @@ absl::StatusOr<bool> CudnnPadForConvolutions::Run(
       }
       changed |= local_changed;
     }
-    if (compute_capability_.IsAtLeast(se::CudaComputeCapability::kVolta)) {
+    if (compute_capability_.SupportsAllFeaturesOf(
+            se::CudaComputeCapability::Volta())) {
       for (HloCustomCallInstruction* conv : GetRelevantConvs(comp)) {
         TF_ASSIGN_OR_RETURN(
             bool local_changed,

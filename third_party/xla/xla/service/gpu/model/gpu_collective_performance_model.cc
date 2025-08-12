@@ -87,15 +87,11 @@ struct CudaBandwidthSettings {
 
   // Returns NVLink bw in GB/s
   float GetNvlinkBw() const {
-    return compute_capability.IsAtLeast(se::CudaComputeCapability::kHopper)
-               ? kSm90NvlinkBandwidth
-           : compute_capability.IsAtLeast(se::CudaComputeCapability::kAmpere)
-               ? kSm80NvlinkBandwidth
-           : compute_capability.IsAtLeast(se::CudaComputeCapability::kVolta)
-               ? kSm70NvlinkBandwidth
-           : compute_capability.IsAtLeast(se::CudaComputeCapability::kPascal)
-               ? kSm60NvlinkBandwidth
-               : kSm80NvlinkBandwidth;
+    return compute_capability.IsHopperGeneration()   ? kSm90NvlinkBandwidth
+           : compute_capability.IsAmpereGeneration() ? kSm80NvlinkBandwidth
+           : compute_capability.IsVoltaGeneration()  ? kSm70NvlinkBandwidth
+           : compute_capability.IsPascalGeneration() ? kSm60NvlinkBandwidth
+                                                     : kSm80NvlinkBandwidth;
   }
 
   // Max bandwidth in GB/s for ring low latency 128 algorithm per channel on a
