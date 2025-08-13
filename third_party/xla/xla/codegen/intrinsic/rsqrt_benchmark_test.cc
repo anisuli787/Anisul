@@ -15,6 +15,7 @@ limitations under the License.
 
 #include <array>
 #include <cstddef>
+#include <iostream>
 #include <memory>
 #include <string>
 #include <utility>
@@ -32,6 +33,7 @@ limitations under the License.
 #include "llvm/IR/Value.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Target/TargetMachine.h"
+#include "llvm/TargetParser/Host.h"
 #include "xla/codegen/intrinsic/intrinsic.h"
 #include "xla/codegen/intrinsic/rsqrt.h"
 #include "xla/codegen/intrinsic/simple_jit_runner.h"
@@ -82,6 +84,8 @@ enum RsqrtFunction {
 
 template <size_t num_elements, PrimitiveType type, RsqrtFunction function>
 static void BM_RsqrtVectorized(benchmark::State& state) {
+  std::cout << "CPU: " << llvm::sys::getHostCPUName().str() << "\n";
+
   using NativeType = typename primitive_util::PrimitiveTypeToNative<type>::type;
   Type intrinsic_type = Type::V(type, num_elements);
   JitRunner jit = CreateJitRunnerWithRsqrt(intrinsic_type);
