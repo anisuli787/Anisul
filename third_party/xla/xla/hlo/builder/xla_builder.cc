@@ -4948,9 +4948,6 @@ absl::StatusOr<XlaOp> XlaBuilder::AddInstruction(
   const int64_t handle = GetNextId();
   instr.set_id(handle);
   *instr.mutable_opcode() = std::string(HloOpcodeString(opcode));
-  if (instr.name().empty()) {
-    instr.set_name(instr.opcode());
-  }
   for (const auto& operand : operands) {
     if (operand.builder_ == nullptr) {
       return InvalidArgument("invalid XlaOp with handle %d", operand.handle());
@@ -4968,6 +4965,23 @@ absl::StatusOr<XlaOp> XlaBuilder::AddInstruction(
   } else {
     *instr.mutable_metadata() = metadata_;
   }
+
+  if (instr.name().empty()) {
+    if (!instr.metadata().op_name().empty()) {
+      absl::string_view op_name = instr.metadata().op_name();
+      std::vector<absl::string_view> parts =
+          absl::StrSplit(op_name, '/', absl::SkipEmpty());
+      absl::string_view name = parts.back();
+      size_t last_dot_pos = name.find_last_of('.');
+      if (last_dot_pos != std::string::npos) {
+        name = name.substr(0, last_dot_pos);
+      }
+      instr.set_name(name);
+    } else {
+      instr.set_name(instr.opcode());
+    }
+  }
+
   if (sharding_) {
     TF_RETURN_IF_ERROR(NormalizeAndAssignSharing(&instr, *sharding_));
   }
