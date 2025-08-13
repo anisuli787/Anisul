@@ -22,6 +22,7 @@ limitations under the License.
 #include "llvm/ADT/STLExtras.h"
 #include "llvm/ADT/SmallVector.h"
 #include "mlir/Dialect/Func/IR/FuncOps.h"
+#include "mlir/IR/OpDefinition.h"
 #include "mlir/IR/OperationSupport.h"
 #include "mlir/IR/PatternMatch.h"
 #include "mlir/IR/Value.h"
@@ -41,6 +42,16 @@ namespace mlir::triton::xla {
 
 namespace {
 
+template <typename T>
+auto ApplyPermutation(T input, llvm::ArrayRef<int32_t> perm) {
+  llvm::SmallVector<std::decay_t<decltype(*input.begin())>> result;
+  result.reserve(perm.size());
+  for (int32_t p : perm) {
+    result.push_back(input[p]);
+  }
+  return result;
+}
+
 LogicalResult FoldTransposeOfLoad(TransOp op, PatternRewriter& rewriter) {
   auto load = op.getSrc().getDefiningOp<LoadOp>();
   if (!load) {
@@ -55,12 +66,7 @@ LogicalResult FoldTransposeOfLoad(TransOp op, PatternRewriter& rewriter) {
   }
 
   auto apply_order = [&](auto range) {
-    llvm::SmallVector<std::decay_t<decltype(*range.begin())>> result;
-    result.reserve(op.getOrder().size());
-    for (auto dim : op.getOrder()) {
-      result.push_back(range[dim]);
-    }
-    return result;
+    return ApplyPermutation(range, op.getOrder());
   };
 
   auto ptr_type =
@@ -68,7 +74,8 @@ LogicalResult FoldTransposeOfLoad(TransOp op, PatternRewriter& rewriter) {
   auto new_make_ptr = rewriter.create<MakeTensorPtrOp>(
       make_ptr.getLoc(), ptr_type, make_ptr.getBase(),
       apply_order(make_ptr.getShape()), apply_order(make_ptr.getStrides()),
-      apply_order(make_ptr.getOffsets()), apply_order(make_ptr.getOrder()));
+      // Leave original order, it's unused but checked to be default elsewhere.
+      apply_order(make_ptr.getOffsets()), make_ptr.getOrderAttr());
 
   llvm::SmallVector<bool> boundary_check_bits(op.getType().getRank());
   for (auto dim : load.getBoundaryCheck()) {
@@ -88,6 +95,34 @@ LogicalResult FoldTransposeOfLoad(TransOp op, PatternRewriter& rewriter) {
   return success();
 }
 
+LogicalResult PushTransposeUpThroughElementwise(TransOp op,
+                                                PatternRewriter& rewriter) {
+  Operation* elementwise_op = op.getSrc().getDefiningOp();
+  if (!elementwise_op || elementwise_op->getNumResults() != 1 ||
+      !elementwise_op->hasTrait<OpTrait::Elementwise>()) {
+    return rewriter.notifyMatchFailure(
+        op, "source is not a single-result elementwise op");
+  }
+
+  SmallVector<Value> new_operands;
+  new_operands.reserve(elementwise_op->getNumOperands());
+  for (Value operand : elementwise_op->getOperands()) {
+    if (auto tensor_type = dyn_cast<RankedTensorType>(operand.getType())) {
+      auto shape = ApplyPermutation(tensor_type.getShape(), op.getOrder());
+      operand = rewriter.create<TransOp>(elementwise_op->getLoc(),
+                                         tensor_type.clone(shape), operand,
+                                         op.getOrderAttr());
+    }
+    new_operands.push_back(operand);
+  }
+
+  Operation* new_op = rewriter.clone(*elementwise_op);
+  new_op->setOperands(new_operands);
+  new_op->getResult(0).setType(op.getType());
+  rewriter.replaceOp(op, new_op->getResults());
+  return success();
+}
+
 class TritonXLAFoldTransposePass
     : public impl::TritonXLAFoldTransposePassBase<TritonXLAFoldTransposePass> {
  public:
@@ -97,6 +132,7 @@ class TritonXLAFoldTransposePass
   void runOnOperation() override {
     RewritePatternSet patterns(&getContext());
     patterns.add(FoldTransposeOfLoad);
+    patterns.add(PushTransposeUpThroughElementwise);
     if (failed(applyPatternsGreedily(getOperation(), std::move(patterns)))) {
       return signalPassFailure();
     }
