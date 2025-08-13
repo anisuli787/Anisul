@@ -562,10 +562,12 @@ class PjRtCApiExecutable : public PjRtExecutable {
     return pjrt::GetCompiledMemoryStats(c_api_, executable_.get());
   }
 
+  // TODO(agunjal): Return the correct output shapes.
   absl::StatusOr<std::vector<Shape>> GetOutputShapes() const override {
-    LOG(FATAL) << "PjRtExecutable::GetOutputShapes() not implemented in PJRT C "
-                  "API. Please use PjRtExecutable::GetOutputElementTypes() or "
-                  "PjRtExecutable::GetOutputDimensions().";
+    /*LOG(FATAL) << "PjRtExecutable::GetOutputShapes() not implemented in PJRT C
+       " "API. Please use PjRtExecutable::GetOutputElementTypes() or "
+                  "PjRtExecutable::GetOutputDimensions().";*/
+    return std::vector<Shape>();
   }
 
   absl::StatusOr<std::vector<std::vector<PrimitiveType>>>
