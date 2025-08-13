@@ -692,12 +692,7 @@ class Delegate {
   }
 
   bool enable_latest_operators() const {
-#ifdef XNNPACK_DELEGATE_USE_LATEST_OPS
     return true;
-#else
-    return (options_.flags &
-            TFLITE_XNNPACK_DELEGATE_FLAG_ENABLE_LATEST_OPERATORS) != 0;
-#endif
   }
 
   bool enable_subgraph_reshaping() const {
