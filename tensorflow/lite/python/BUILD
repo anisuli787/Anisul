@@ -2,7 +2,7 @@ load("@flatbuffers//:build_defs.bzl", "flatbuffer_py_library")
 load("@rules_shell//shell:sh_test.bzl", "sh_test")
 load("//tensorflow:pytype.default.bzl", "pytype_strict_contrib_test", "pytype_strict_library")
 load("//tensorflow:strict.default.bzl", "py_strict_binary", "py_strict_library", "py_strict_test")
-load("//tensorflow:tensorflow.default.bzl", "get_compatible_with_portable", "pywrap_binaries", "pywrap_library")
+load("//tensorflow:tensorflow.default.bzl", "get_compatible_with_portable", "pywrap_aware_filegroup", "pywrap_aware_genrule", "pywrap_binaries", "pywrap_library")
 load("//tensorflow/core/platform:build_config_root.bzl", "if_pywrap")
 load("//tensorflow/lite:special_rules.bzl", "internal_visibility_allowlist")
 
@@ -659,6 +659,7 @@ py_strict_library(
     name = "tflite_pywrap_deps",
     visibility = ["//visibility:public"],
     deps = [
+        "//tensorflow/compiler/mlir/lite/python:_pywrap_converter_api",
         "//tensorflow/lite/experimental/genai:pywrap_genai_ops",
         "//tensorflow/lite/python/analyzer_wrapper:_pywrap_analyzer_wrapper",
         "//tensorflow/lite/python/interpreter_wrapper:_pywrap_tensorflow_interpreter_wrapper",
@@ -670,10 +671,53 @@ py_strict_library(
     ],
 )
 
+# Targets for Windows build to generate a .def file for pywrap_tflite.
+pywrap_aware_filegroup(
+    name = "tflite_win_lib_files_for_exported_symbols",
+    srcs = [
+        # "//tensorflow/compiler/mlir/lite/python:converter_python_api",  # Contains tflite::Convert>
+        "//tensorflow/compiler/mlir/lite:tf_tfl_translate_lib",
+        "//tensorflow/compiler/mlir/lite:quantization_tf",
+        "//tensorflow/compiler/mlir/lite:quantization_stablehlo",
+        "//tensorflow/compiler/mlir/lite/quantization/tensorflow:quantization_py_function_library",
+        # Add other cc_library targets here that contain symbols needed by TFLite pybinds on Windows.
+    ],
+    visibility = ["//visibility:private"],
+)
+
+# Generate a DEF file for _pywrap_tflite_0_shared_object.dll on Windows.
+pywrap_aware_genrule(
+    name = "_pywrap_tflite_common_def",
+    srcs = select({
+        "@bazel_tools//src/conditions:windows": [
+            ":tflite_win_lib_files_for_exported_symbols",
+            "//tensorflow:tensorflow_def_file",
+            "//tensorflow/tools/def_file_filter:symbols_pybind",
+        ],
+        "//conditions:default": [],
+    }),
+    outs = ["_pywrap_tflite_common.def"],
+    cmd = select({
+        "@bazel_tools//src/conditions:windows": """
+              $(location @local_config_def_file_filter//:def_file_filter) \\
+              --input $(location //tensorflow:tensorflow_def_file) \\
+              --output $@ \\
+              --target _pywrap_tflite_0_shared_object.dll \\
+              --symbols $(location //tensorflow/tools/def_file_filter:symbols_pybind) \\
+              --lib_paths_file <(for SRC in $(locations :tflite_win_lib_files_for_exported_symbols); do echo $$SRC | sed 's/third_party\\///g'; done)
+          """,
+        "//conditions:default": "touch $@",
+    }),
+    visibility = ["//visibility:public"],
+)
+
 pywrap_library(
     name = "pywrap_tflite",
     common_lib_def_files_or_filters = {
-        "tensorflow/lite/python/pywrap_tflite_common": "pywrap_tflite_common.json",
+        "tensorflow/lite/python/pywrap_tflite_common": select({
+            "@bazel_tools//src/conditions:windows": ":_pywrap_tflite_common_def",
+            "//conditions:default": "pywrap_tflite_common.json",
+        }),
     },
     common_lib_version_scripts = {
         "tensorflow/lite/python/pywrap_tflite_common": select({
@@ -682,7 +726,7 @@ pywrap_library(
             "//conditions:default": "pywrap_tflite_common.lds",
         }),
     },
-    pywrap_count = 8,
+    pywrap_count = 9,
     visibility = ["//visibility:public"],
     deps = [
         ":tflite_pywrap_deps",
